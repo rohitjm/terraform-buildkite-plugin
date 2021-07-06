@@ -1,0 +1,9 @@
+name: File Counter
+description: Annotates build with a file count
+author: https://github.com/cd-experiments
+requirements: []
+configuration:
+  properties:
+    pattern:
+      type: string
+  additionalProperties: false
