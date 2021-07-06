@@ -2,7 +2,7 @@
 set -euo pipefail
 
 
-PATTERN="$BUILDKITE_PLUGIN_CD_TEST_PATTERN"
+PATTERN="$BUILDKITE_PLUGIN_TERRAFORM_PATTERN"
 
 echo "--- :1234: Counting the number of files"
 
