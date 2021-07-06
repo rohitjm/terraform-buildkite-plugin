@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# environment hook for terraform plugin
+# prepends plugin `bin` dir to $PATH
+
+set -ueo pipefail
+
+export TERRAFORM_VERSION="${TERRAFORM_VERSION:-0.14.6}"
+
+# Make everyhing in the `bin` dir available in $PATH
+DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+export PATH="$DIR/../bin:$PATH"
