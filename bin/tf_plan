@@ -7,4 +7,5 @@ terraform init -input=false
 echo -e "#################### TERRAFORM PLAN ####################"
 terraform plan -input=false -out=tfplan
 
+buildkite-agent artifact upload .terraform
 buildkite-agent artifact upload tfplan

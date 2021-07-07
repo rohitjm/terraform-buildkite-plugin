@@ -2,6 +2,7 @@
 
 set -e -o pipefail
 
+buildkite-agent artifact download .terraform .
 buildkite-agent artifact download tfplan .
 
 echo -e "#################### TERRAFORM APPLY ####################"
