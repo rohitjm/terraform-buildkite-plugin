@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e -o pipefail
+
+echo -e "#################### TERRAFORM PLAN ####################"
+# prints and copies output of the plan with color to terraform_state_plan file
+terraform plan | tee $state_and_plan_file
