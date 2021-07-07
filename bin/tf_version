@@ -2,5 +2,11 @@
 
 set -e -o pipefail
 
+tfdir=${1%/}
+
+echo "tfdir: $tfdir"
+
+pushd $tfdir
 echo "getting terraform version"
 terraform version
+popd
