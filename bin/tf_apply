@@ -2,7 +2,8 @@
 
 set -e -o pipefail
 
-buildkite-agent artifact download plan-artifacts.tar.gz
+buildkite-agent artifact download plan-artifacts.tar.gz .
+tar xvf plan-artifacts.tar.gz
 
 ls -al
 
