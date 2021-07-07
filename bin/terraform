@@ -17,5 +17,4 @@ if [[ ! -f $TF_BIN ]]; then
   echo "downloaded terraform to $TF_BIN"
 fi
 
-$TF_BIN --version
-#$TF_BIN "$@"
+$TF_BIN "$@"
