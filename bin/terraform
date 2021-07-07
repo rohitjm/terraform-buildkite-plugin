@@ -15,49 +15,7 @@ if [[ ! -f $TF_BIN ]]; then
   download_terraform $TERRAFORM_VERSION $TF_BIN
 fi
 
-# This checks internally if the file already exists
-DME_BIN="${HOME}/.terraform.d/plugins/terraform-provider-dme-${DME_PROVIDER_VERSION}"
-download_dme_provider ${DME_PROVIDER_VERSION} ${DME_BIN}
-
 # Basically strips the thing on the right from the thing on the left
 # Load library functions
 SUBDIR="${PWD#"$BUILDKITE_BUILD_CHECKOUT_PATH"}"
-
-# Process shovel env vars
-knife vault show shovel env common -m client -Fjson > .shovel-vars.json
-
-export DME_AKEY=$(cat .shovel-vars.json  | jq -r .common.DME_AKEY)
-export DME_SKEY=$(cat .shovel-vars.json  | jq -r .common.DME_SKEY)
-export DME_USESANDBOX=$(cat .shovel-vars.json  | jq -r .common.DME_USESANDBOX)
-rm -f .shovel-vars.json
-
-DOCKER_EXTRA_ARGS=""
-
-# Processing env vars to pass in
-while IFS='=' read -r name value ; do
-  if [[ $name == 'TF_VAR_'* ]]; then
-    DOCKER_EXTRA_ARGS="${DOCKER_EXTRA_ARGS} -e $name"
-  fi
-done < <(env)
-
-# Mounting $BUILDKITE_BUILD_CHECKOUT_PATH into the container so we have access
-#  to everything, but changing workdir to match current subdirectory
-docker run --rm \
-  -e BUILDKITE \
-  -e AWS_ACCESS_KEY_ID \
-  -e AWS_SECRET_ACCESS_KEY \
-  -e AWS_SESSION_TOKEN \
-  -e DME_AKEY \
-  -e DME_SKEY \
-  -e DME_USESANDBOX \
-  -v $HOME/.ssh/known_hosts:/root/.ssh/known_hosts \
-  -v $SSH_AUTH_SOCK:/ssh-agent \
-  -e SSH_AUTH_SOCK=/ssh-agent \
-  -v $TF_BIN:/usr/bin/terraform \
-  -v $DME_BIN:/root/.terraform.d/plugins/terraform-provider-dme \
-  -v $BUILDKITE_BUILD_CHECKOUT_PATH:/workdir \
-  --entrypoint /usr/bin/terraform \
-  -w /workdir${SUBDIR} \
-  ${DOCKER_EXTRA_ARGS} \
-  bitnami/git "$@"
 
