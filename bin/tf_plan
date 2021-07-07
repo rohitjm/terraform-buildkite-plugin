@@ -2,7 +2,9 @@
 
 set -e -o pipefail
 
-terraform init
+echo -e "#################### TERRAFORM INIT ####################"
+terraform init -input=false
 echo -e "#################### TERRAFORM PLAN ####################"
-# prints and copies output of the plan with color to terraform_state_plan file
-terraform plan | tee $state_and_plan_file
+terraform plan -input=false -out=tfplan -detailed-exitcode
+
+buildkite-agent artifact upload tfplan

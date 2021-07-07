@@ -3,4 +3,4 @@
 set -e -o pipefail
 
 echo -e "#################### TERRAFORM APPLY ####################"
-terraform --input=false apply
+terraform apply -input=false tfplan
