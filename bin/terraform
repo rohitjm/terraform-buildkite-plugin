@@ -15,5 +15,6 @@ TF_BIN="${HOME}/terraform-versions/terraform-${TERRAFORM_VERSION}"
 if [[ ! -f $TF_BIN ]]; then
   download_terraform $TERRAFORM_VERSION $TF_BIN
   echo "downloaded terraform to $TF_BIN"
-  ls -l $TF_BIN
 fi
+
+ls -l $TF_BIN
