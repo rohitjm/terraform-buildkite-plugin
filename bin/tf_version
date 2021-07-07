@@ -1,4 +1,3 @@
 #!/bin/bash
 
-echo "getting terrform version"
-terraform version
+echo "terraform version: `terraform version`"
