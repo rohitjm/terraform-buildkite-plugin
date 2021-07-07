@@ -5,6 +5,6 @@ set -e -o pipefail
 echo -e "#################### TERRAFORM INIT ####################"
 terraform init -input=false
 echo -e "#################### TERRAFORM PLAN ####################"
-terraform plan -input=false -out=tfplan -detailed-exitcode
+terraform plan -input=false -out=tfplan
 
 buildkite-agent artifact upload tfplan
