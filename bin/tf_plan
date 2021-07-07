@@ -7,8 +7,8 @@ terraform init -input=false
 echo -e "#################### TERRAFORM PLAN ####################"
 terraform plan -input=false -out=tfplan
 
-pwd
+tar -czf plan-artifacts.tar.gz $(git ls-files --others .)
+
 ls -al
 
-buildkite-agent artifact upload .terraform
-buildkite-agent artifact upload tfplan
+buildkite-agent artifact upload plan-artifacts.tar.gz
