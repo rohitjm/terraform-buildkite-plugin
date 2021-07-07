@@ -18,4 +18,4 @@ fi
 # Basically strips the thing on the right from the thing on the left
 # Load library functions
 SUBDIR="${PWD#"$BUILDKITE_BUILD_CHECKOUT_PATH"}"
-
+echo $TF_BIN
