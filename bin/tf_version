@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "getting terrform version"
+terraform version
