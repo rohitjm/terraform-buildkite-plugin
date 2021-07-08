@@ -22,7 +22,7 @@ NC='\033[0m'
 delegate_account_id="${BUILDKITE_PLUGIN_TERRAFORM_DELEGATE_ACCOUNT_ID}"
 delegate_role="${BUILDKITE_PLUGIN_TERRAFORM_DELEGATE_ROLE}"
 session_duration_seconds="${BUILDKITE_PLUGIN_TERRAFORM_DELEGATE_SESSION_DURATION:-3600}"
-role_arn="arn:aws:iam::${account_id}:role/${role}"
+role_arn="arn:aws:iam::${delegate_account_id}:role/${delegate_role}"
 
 # Give this a meaningful session name so we can track stuff
 session_name="buildkite-${BUILDKITE_PIPELINE_SLUG}-${BUILDKITE_BUILD_NUMBER}"
@@ -39,7 +39,7 @@ export AWS_SECRET_ACCESS_KEY=$(cat .assumed-role.json | jq -r '.Credentials.Secr
 export AWS_SESSION_TOKEN=$(cat .assumed-role.json | jq -r '.Credentials.SessionToken')
 rm -f .assumed-role.json
 
-export AWS_ACCOUNT_ID="${account_id}"
-export AWS_ROLE="${role}"
+export AWS_ACCOUNT_ID="${delegate_account_id}"
+export AWS_ROLE="${delegate_role}"
 
 echo -e "${GREEN}Successfully assumed role ${role_arn}${NC}"
