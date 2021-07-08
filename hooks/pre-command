@@ -19,9 +19,9 @@ GREEN='\033[0;32m'
 NC='\033[0m'
 
 # Process plugin parameters
-account_id="${BUILDKITE_PLUGIN_TERRAFORM_ACCOUNT_ID}"
-role="${BUILDKITE_PLUGIN_TERRAFORM_ROLE}"
-session_duration_seconds="${BUILDKITE_PLUGIN_TERRAFORM_SESSION_DURATION:-3600}"
+delegate_account_id="${BUILDKITE_PLUGIN_DELEGATE_ACCOUNT_ID}"
+delegate_role="${BUILDKITE_PLUGIN_DELEGATE_ROLE}"
+session_duration_seconds="${BUILDKITE_PLUGIN_DELEGATE_SESSION_DURATION:-3600}"
 role_arn="arn:aws:iam::${account_id}:role/${role}"
 
 # Give this a meaningful session name so we can track stuff
