@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Pre-command hook for terraform plugin
+#  Performs an assume role using credator god creds
+
+set -ueo pipefail
+
+function _cleanup() {
+  rm -f .assumed-role.json
+}
+
+trap _cleanup EXIT
+
+BUILDKITE="${BUILDKITE:-}"
+
+RED='\033[0;31m'
+ORANGE='\033[0;33m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+# Process plugin parameters
+account_id="${BUILDKITE_PLUGIN_TERRAFORM_ACCOUNT_ID}"
+role="${BUILDKITE_PLUGIN_TERRAFORM_ROLE}"
+session_duration_seconds="${BUILDKITE_PLUGIN_TERRAFORM_SESSION_DURATION:-3600}"
+role_arn="arn:aws:iam::${account_id}:role/${role}"
+
+# Give this a meaningful session name so we can track stuff
+session_name="buildkite-${BUILDKITE_PIPELINE_SLUG}-${BUILDKITE_BUILD_NUMBER}"
+
+# Assume the delegate role
+aws sts assume-role \
+--role-arn "${role_arn}" \
+--role-session-name "${session_name}" \
+--duration-seconds $session_duration_seconds > .assumed-role.json
+
+# Export aws env vars from the assumed session - available 
+export AWS_ACCESS_KEY_ID=$(cat .assumed-role.json | jq -r '.Credentials.AccessKeyId')
+export AWS_SECRET_ACCESS_KEY=$(cat .assumed-role.json | jq -r '.Credentials.SecretAccessKey')
+export AWS_SESSION_TOKEN=$(cat .assumed-role.json | jq -r '.Credentials.SessionToken')
+rm -f .assumed-role.json
+
+export AWS_ACCOUNT_ID="${account_id}"
+export AWS_ROLE="${role}"
+
+echo -e "${GREEN}Successfully assumed role ${role_arn}${NC}"
