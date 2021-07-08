@@ -1,6 +1,0 @@
-#!/bin/bash
-
-set -e -o pipefail
-
-echo -e "#################### TERRAFORM INIT ####################"
-terraform init
