@@ -16,7 +16,8 @@ echo -e "#################### OPA POLICY CHECK ####################"
 
 terraform show -json tfplan > tfplan.json
 pwd
-OPA_RESULT=`opa eval --format pretty --data opa-policy/terraform.rego --input tfplan.json "data.terraform.analysis.tag_enforcement"`
+echo $TERRAFORM_PLUGIN_DIR
+OPA_RESULT=`opa eval --format pretty --data $TERRAFORM_PLUGIN_DIR/opa-policy/terraform.rego --input tfplan.json "data.terraform.analysis.tag_enforcement"`
 if [[ $OPA_RESULT == "true" ]]; then
   echo "$GREEN OPA check succeeded! $NC"
 else
