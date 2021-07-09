@@ -19,17 +19,17 @@ GREEN='\033[0;32m'
 NC='\033[0m'
 
 # Process plugin parameters
-delegate_account_id="${BUILDKITE_PLUGIN_DELEGATE_ACCOUNT_ID}"
-delegate_role="${BUILDKITE_PLUGIN_DELEGATE_ROLE}"
-session_duration_seconds="${BUILDKITE_PLUGIN_DELEGATE_SESSION_DURATION:-3600}"
-role_arn="arn:aws:iam::${account_id}:role/${role}"
+delegate_account_id="${BUILDKITE_PLUGIN_TERRAFORM_DELEGATE_ACCOUNT_ID}"
+delegate_role="${BUILDKITE_PLUGIN_TERRAFORM_DELEGATE_ROLE}"
+session_duration_seconds="${BUILDKITE_PLUGIN_TERRAFORM_DELEGATE_SESSION_DURATION:-3600}"
+delegate_role_arn="arn:aws:iam::${delegate_account_id}:role/${delegate_role}"
 
 # Give this a meaningful session name so we can track stuff
 session_name="buildkite-${BUILDKITE_PIPELINE_SLUG}-${BUILDKITE_BUILD_NUMBER}"
 
 # Assume the delegate role
 aws sts assume-role \
---role-arn "${role_arn}" \
+--role-arn "${delegate_role_arn}" \
 --role-session-name "${session_name}" \
 --duration-seconds $session_duration_seconds > .assumed-role.json
 
@@ -39,12 +39,12 @@ export AWS_SECRET_ACCESS_KEY=$(cat .assumed-role.json | jq -r '.Credentials.Secr
 export AWS_SESSION_TOKEN=$(cat .assumed-role.json | jq -r '.Credentials.SessionToken')
 rm -f .assumed-role.json
 
-export AWS_ACCOUNT_ID="${account_id}"
-export AWS_ROLE="${role}"
+export AWS_ACCOUNT_ID="${delegate_account_id}"
+export AWS_ROLE="${delegate_role}"
 
 if [[ "${BUILDKITE_COMMAND}" == "tf_apply" ]]; then
   echo "Checking if the pull request has been approved by a user with prod access."
   # use github API /status to check if the PR has passed all checks, assuming one of these will be a prod-appoval check
 fi
 
-echo -e "${GREEN}Successfully assumed role ${role_arn}${NC}"
+echo -e "${GREEN}Successfully assumed role ${delegate_role_arn}${NC}"
