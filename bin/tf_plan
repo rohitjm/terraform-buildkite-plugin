@@ -19,9 +19,9 @@ pwd
 echo $TERRAFORM_PLUGIN_DIR
 OPA_RESULT=`opa eval --format pretty --data $TERRAFORM_PLUGIN_DIR/opa-policy/terraform.rego --input tfplan.json "data.terraform.analysis.tag_enforcement"`
 if [[ $OPA_RESULT == "true" ]]; then
-  echo "$GREEN OPA check succeeded! $NC"
+  echo "${GREEN} OPA check succeeded! ${NC}"
 else
-  echo "$RED OPA check failed! $NC"
+  echo "${RED} OPA check failed! ${NC}"
   exit 1
 fi
 
