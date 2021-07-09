@@ -1,5 +1,8 @@
 #!/bin/bash
 
+RED='\033[0;31m'
+NC='\033[0m'
+
 set -e -o pipefail
 
 echo -e "#################### TERRAFORM INIT ####################"
@@ -7,8 +10,18 @@ terraform init -input=false
 echo -e "#################### TERRAFORM PLAN ####################"
 terraform plan -input=false -out=tfplan
 
+terraform show -json tfplan > tfplan.json
+
+OPA_RESULT=`opa eval --format pretty --data terraform.rego --input tfplan.json "data.terraform.analysis.tag_enforcement"`
+if [ $OPA_RESULT == "false" ]; then
+  echo "$RED OPA check failed! $NC"
+  exit 1
+fi
+
 tar -czf plan-artifacts.tar.gz $(git ls-files --others .)
 
 ls -al
 
 buildkite-agent artifact upload plan-artifacts.tar.gz
+
+
