@@ -31,7 +31,8 @@ session_name="buildkite-${BUILDKITE_PIPELINE_SLUG}-${BUILDKITE_BUILD_NUMBER}"
 aws sts assume-role \
 --role-arn "${delegate_role_arn}" \
 --role-session-name "${session_name}" \
---duration-seconds $session_duration_seconds > .assumed-role.json
+--duration-seconds $session_duration_seconds \
+--source-identity arn:aws:iam::212096100866:role/terraform-buildkite-poc-Role > .assumed-role.json
 
 # Export aws env vars from the assumed session - available 
 export AWS_ACCESS_KEY_ID=$(cat .assumed-role.json | jq -r '.Credentials.AccessKeyId')
