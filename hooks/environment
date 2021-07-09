@@ -12,3 +12,4 @@ export OPA_VERSION="${OPA_VERSION:-0.30.1}"
 # Make everyhing in the `bin` dir available in $PATH
 DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 export PATH="$DIR/../bin:$PATH"
+export TERRAFORM_PLUGIN_DIR=$DIR/..
