@@ -9,6 +9,12 @@ function _cleanup() {
   rm -f .assumed-role.json
 }
 
+function fetch_mappings_from_s3() {
+  echo getting repo to delegate roles mappings
+  mkdir tmp
+  aws s3 cp s3://buildkite-terraform-test-resources/team_account_mappings.json tmp/
+}
+
 trap _cleanup EXIT
 
 BUILDKITE="${BUILDKITE:-}"
@@ -43,39 +49,52 @@ export AWS_ACCOUNT_ID="${delegate_account_id}"
 export AWS_ROLE="${delegate_role}"
 
 
+
+
+#####  TF PLAN Scoped #####
 if [[ "${BUILDKITE_COMMAND}" == "tf_plan" ]]; then
   echo "Checking if the specified account is available to the repo owning team."
 
-  if [[ ":$BUILDKITE_BUILD_CREATOR_TEAMS:" != *":everyone:"* ]]; then
-
-    PERMISSIONS=($(cat tests/stub/team_account_mappings.json | jq -r ".[\"${BUILDKITE_PLUGIN_TERRAFORM_ACCOUNT_ID}\"]" | tr "," "\n" ))
-
-    echo "BUILDKITE_BUILD_CREATOR_TEAMS = $BUILDKITE_BUILD_CREATOR_TEAMS "
-    echo "ARN '"$BUILDKITE_PLUGIN_TERRAFORM_ACCOUNT_ID"' with permissions "${PERMISSIONS[*]}
-
-    PERMISSION_GIVEN="no"
-    for i in ${PERMISSIONS[@]}; do
-      if [[ $i == \"$BUILDKITE_BUILD_CREATOR_TEAMS\" ]]; then
-        echo "Permission scoped for "$i;
-        PERMISSION_GIVEN="yes"
-      fi
-      # echo "$i";
-    done
-
-    if [[ "$PERMISSION_GIVEN" = "yes" ]]; then
-      echo "Permission scoped to user. Yay."
-    else
-      echo "Permission not scoped to user. :( "
-      exit 1
-    fi
-
+  # fetch mappings from s3 only when running on agent for access policy reasons
+  if [[ -n "${BUILDKITE}" ]]; then
+    fetch_mappings_from_s3()
   else
-    echo "Permission scoped to everyone. Yay."
+
+    # assume mapping is in local directory
+    echo "___ : Buildkite creator team permissions check..."
+
+    if [[ ":$BUILDKITE_BUILD_CREATOR_TEAMS:" != *":everyone:"* ]]; then
+
+      PERMISSIONS=($(cat tmp/team_account_mappings.json | jq -r ".[\"${BUILDKITE_PLUGIN_TERRAFORM_ACCOUNT_ID}\"]" | tr "," "\n" ))
+
+      echo "BUILDKITE_BUILD_CREATOR_TEAMS = $BUILDKITE_BUILD_CREATOR_TEAMS "
+      echo "ARN '"$BUILDKITE_PLUGIN_TERRAFORM_ACCOUNT_ID"' with permissions "${PERMISSIONS[*]}
+
+      PERMISSION_GIVEN="no"
+      for i in ${PERMISSIONS[@]}; do
+        if [[ $i == \"$BUILDKITE_BUILD_CREATOR_TEAMS\" ]]; then
+          echo "Permission scoped for "$i;
+          PERMISSION_GIVEN="yes"
+        fi
+        # echo "$i";
+      done
+
+      if [[ "$PERMISSION_GIVEN" = "yes" ]]; then
+        echo "Permission scoped to user. Yay."
+      else
+        echo "Permission not scoped to user. :( "
+        exit 1
+      fi
+
+    else
+      echo "Permission scoped to everyone. Yay."
+    fi
   fi
 
 fi
 
 
+#####  TF APPLY Scoped #####
 if [[ "${BUILDKITE_COMMAND}" == "tf_apply" ]]; then
   echo "Checking if the pull request has been approved by a user with prod access."
   # use github API /status to check if the PR has passed all checks, assuming one of these will be a prod-appoval check
