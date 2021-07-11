@@ -34,26 +34,6 @@ session_name="buildkite-${BUILDKITE_PIPELINE_SLUG}-${BUILDKITE_BUILD_NUMBER}"
 PERMISSIONS=""
 
 
-if [[ -n "${BUILDKITE}" ]]; then
-
-  # Assume the delegate role
-  aws sts assume-role \
-  --role-arn "${delegate_role_arn}" \
-  --role-session-name "${session_name}" \
-  --duration-seconds $session_duration_seconds > .assumed-role.json
-
-
-# Export aws env vars from the assumed session - available
-  export AWS_ACCESS_KEY_ID=$(cat .assumed-role.json | jq -r '.Credentials.AccessKeyId')
-  export AWS_SECRET_ACCESS_KEY=$(cat .assumed-role.json | jq -r '.Credentials.SecretAccessKey')
-  export AWS_SESSION_TOKEN=$(cat .assumed-role.json | jq -r '.Credentials.SessionToken')
-  rm -f .assumed-role.json
-
-  export AWS_ACCOUNT_ID="${delegate_account_id}"
-  export AWS_ROLE="${delegate_role}"
-fi
-
-
 #####  TF PLAN Scoped #####
 if [[ "${BUILDKITE_COMMAND}" == "tf_plan" ]]; then
   echo "Checking if the specified account is available to the repo owning team."
@@ -105,4 +85,25 @@ if [[ "${BUILDKITE_COMMAND}" == "tf_apply" ]]; then
   # use github API /status to check if the PR has passed all checks, assuming one of these will be a prod-appoval check
 fi
 
-echo -e "${GREEN}Successfully assumed role ${delegate_role_arn}${NC}"
+
+if [[ -n "${BUILDKITE}" ]]; then
+
+  # Assume the delegate role
+  aws sts assume-role \
+  --role-arn "${delegate_role_arn}" \
+  --role-session-name "${session_name}" \
+  --duration-seconds $session_duration_seconds > .assumed-role.json
+
+
+  # Export aws env vars from the assumed session - available
+  export AWS_ACCESS_KEY_ID=$(cat .assumed-role.json | jq -r '.Credentials.AccessKeyId')
+  export AWS_SECRET_ACCESS_KEY=$(cat .assumed-role.json | jq -r '.Credentials.SecretAccessKey')
+  export AWS_SESSION_TOKEN=$(cat .assumed-role.json | jq -r '.Credentials.SessionToken')
+  rm -f .assumed-role.json
+
+  export AWS_ACCOUNT_ID="${delegate_account_id}"
+  export AWS_ROLE="${delegate_role}"
+
+  echo -e "${GREEN}Successfully assumed role ${delegate_role_arn}${NC}"
+fi
+
