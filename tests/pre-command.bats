@@ -6,12 +6,12 @@ load '/usr/local/lib/bats/load.bash'
 # export BUILDKITE_AGENT_STUB_DEBUG=/dev/tty
 
 export BUILDKITE_PLUGIN_TERRAFORM_DELEGATE_ROLE="buildkite-agent-delegate-role"
-export BUILDKITE_PLUGIN_TERRAFORM_DELEGATE_ACCOUNT_ID="0123456"
 export BUILDKITE_PIPELINE_SLUG="test-repo-a"
 export BUILDKITE_BUILD_NUMBER="105"
 
 @test "Scope everyone passes" {
-  export BUILDKITE_BUILD_CREATOR_TEAMS="everyone"
+  export BUILDKITE_BUILD_CREATOR_TEAMS="everyone:orchestration:orchestration-delivery"
+  export BUILDKITE_PLUGIN_TERRAFORM_DELEGATE_ACCOUNT_ID="0123456"
   export BUILDKITE_COMMAND="tf_plan"
 
   run "$PWD/hooks/pre-command"
@@ -22,7 +22,8 @@ export BUILDKITE_BUILD_NUMBER="105"
 
 @test "Scope happy path" {
   export BUILDKITE_BUILD_CREATOR_TEAMS="orchestration-delivery"
-  export BUILDKITE_PLUGIN_TERRAFORM_ACCOUNT_ID="0123456"
+  export BUILDKITE_PLUGIN_TERRAFORM_DELEGATE_ACCOUNT_ID="0123456"
+  export BUILDKITE_COMMAND="tf_plan"
 
   run "$PWD/hooks/pre-command"
 
@@ -33,12 +34,12 @@ export BUILDKITE_BUILD_NUMBER="105"
 
 @test "Fails on no team" {
   export BUILDKITE_BUILD_CREATOR_TEAMS="not-orchestration-delivery"
-  export BUILDKITE_PLUGIN_TERRAFORM_ACCOUNT_ID="0123456"
+  export BUILDKITE_PLUGIN_TERRAFORM_DELEGATE_ACCOUNT_ID="0123456"
+  export BUILDKITE_COMMAND="tf_plan"
   export AGE_IN_SECONDS=10
   export CACHE_MAX_AGE=100
 
-  run "$PWD/hooks/post-command"
-
+  run "$PWD/hooks/pre-command"
 
   assert_failure
   assert_output --partial "Permission not scoped to user."
@@ -46,12 +47,11 @@ export BUILDKITE_BUILD_NUMBER="105"
 
 @test "Fails on no TF id" {
   export BUILDKITE_BUILD_CREATOR_TEAMS="orchestration-delivery"
-  export BUILDKITE_PLUGIN_TERRAFORM_ACCOUNT_ID="000000"
+  export BUILDKITE_COMMAND="tf_plan"
   export AGE_IN_SECONDS=10
   export CACHE_MAX_AGE=100
 
-  run "$PWD/hooks/post-command"
-
+  run "$PWD/hooks/pre-command"
 
   assert_failure
   assert_output --partial "Permission not scoped to user."

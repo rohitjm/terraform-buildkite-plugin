@@ -1,18 +1,15 @@
 #!/bin/bash
 
 # Pre-command hook for terraform plugin
-#  Performs an assume role using credator god creds
+# Performs an assume role using credator god creds
 
 set -ueo pipefail
 
 function _cleanup() {
   rm -f .assumed-role.json
-}
-
-function fetch_mappings_from_s3() {
-  echo getting repo to delegate roles mappings
-  mkdir tmp
-  aws s3 cp s3://buildkite-terraform-test-resources/team_account_mappings.json tmp/
+  if [[ -n "${BUILDKITE}" ]]; then
+    rm -rf tmp/
+  fi
 }
 
 trap _cleanup EXIT
@@ -33,6 +30,8 @@ delegate_role_arn="arn:aws:iam::${delegate_account_id}:role/${delegate_role}"
 # Give this a meaningful session name so we can track stuff
 session_name="buildkite-${BUILDKITE_PIPELINE_SLUG}-${BUILDKITE_BUILD_NUMBER}"
 
+# initialize global vars
+PERMISSIONS=""
 
 
 if [[ -n "${BUILDKITE}" ]]; then
@@ -61,37 +60,40 @@ if [[ "${BUILDKITE_COMMAND}" == "tf_plan" ]]; then
 
   # fetch mappings from s3 only when running on agent for access policy reasons
   if [[ -n "${BUILDKITE}" ]]; then
-    fetch_mappings_from_s3
+    echo getting repo to delegate roles mappings from s3
+    mkdir tmp
+    aws s3 cp s3://buildkite-terraform-test-resources/team_account_mappings.json tmp/
+    PERMISSIONS=($(cat tmp/team_account_mappings.json | jq -r ".[\"${BUILDKITE_PLUGIN_TERRAFORM_DELEGATE_ACCOUNT_ID}\"]" | tr "," "\n" ))
   else
     # assume mapping is in local directory
-    echo "___ : Buildkite creator team permissions check..."
+    echo getting repo to delegate roles mappings from local directory
+    PERMISSIONS=($(cat tests/stubs/team_account_mappings.json | jq -r ".[\"${BUILDKITE_PLUGIN_TERRAFORM_DELEGATE_ACCOUNT_ID}\"]" | tr "," "\n" ))
   fi
 
+  echo "___ : Buildkite creator team permissions check..."
   if [[ ":$BUILDKITE_BUILD_CREATOR_TEAMS:" != *":everyone:"* ]]; then
 
-    PERMISSIONS=($(cat tmp/team_account_mappings.json | jq -r ".[\"${BUILDKITE_PLUGIN_TERRAFORM_ACCOUNT_ID}\"]" | tr "," "\n" ))
-
     echo "BUILDKITE_BUILD_CREATOR_TEAMS = $BUILDKITE_BUILD_CREATOR_TEAMS "
-    echo "ARN '"$BUILDKITE_PLUGIN_TERRAFORM_ACCOUNT_ID"' with permissions "${PERMISSIONS[*]}
+    echo "ARN '"$BUILDKITE_PLUGIN_TERRAFORM_DELEGATE_ACCOUNT_ID"' with permissions "${PERMISSIONS[*]}
 
-    PERMISSION_GIVEN="no"
+    PERMISSION_GIVEN=false
     for i in ${PERMISSIONS[@]}; do
       if [[ $i == \"$BUILDKITE_BUILD_CREATOR_TEAMS\" ]]; then
         echo "Permission scoped for "$i;
-        PERMISSION_GIVEN="yes"
+        PERMISSION_GIVEN=true
       fi
       # echo "$i";
     done
 
-    if [[ "$PERMISSION_GIVEN" = "yes" ]]; then
-      echo "Permission scoped to user. Yay."
+    if [[ "$PERMISSION_GIVEN" = true ]]; then
+      echo "${GREEN}Permission scoped to user. Yay."
     else
-      echo "Permission not scoped to user. :( "
+      echo "${RED}Permission not scoped to user. :( "
       exit 1
     fi
 
   else
-    echo "Permission scoped to everyone. Yay."
+    echo "${GREEN}Permission scoped to everyone. Yay."
   fi
 
 fi
