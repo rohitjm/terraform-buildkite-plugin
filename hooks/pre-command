@@ -33,22 +33,26 @@ delegate_role_arn="arn:aws:iam::${delegate_account_id}:role/${delegate_role}"
 # Give this a meaningful session name so we can track stuff
 session_name="buildkite-${BUILDKITE_PIPELINE_SLUG}-${BUILDKITE_BUILD_NUMBER}"
 
-# Assume the delegate role
-aws sts assume-role \
---role-arn "${delegate_role_arn}" \
---role-session-name "${session_name}" \
---duration-seconds $session_duration_seconds > .assumed-role.json
-
-# Export aws env vars from the assumed session - available 
-export AWS_ACCESS_KEY_ID=$(cat .assumed-role.json | jq -r '.Credentials.AccessKeyId')
-export AWS_SECRET_ACCESS_KEY=$(cat .assumed-role.json | jq -r '.Credentials.SecretAccessKey')
-export AWS_SESSION_TOKEN=$(cat .assumed-role.json | jq -r '.Credentials.SessionToken')
-rm -f .assumed-role.json
-
-export AWS_ACCOUNT_ID="${delegate_account_id}"
-export AWS_ROLE="${delegate_role}"
 
 
+if [[ -n "${BUILDKITE}" ]]; then
+
+  # Assume the delegate role
+  aws sts assume-role \
+  --role-arn "${delegate_role_arn}" \
+  --role-session-name "${session_name}" \
+  --duration-seconds $session_duration_seconds > .assumed-role.json
+
+
+# Export aws env vars from the assumed session - available
+  export AWS_ACCESS_KEY_ID=$(cat .assumed-role.json | jq -r '.Credentials.AccessKeyId')
+  export AWS_SECRET_ACCESS_KEY=$(cat .assumed-role.json | jq -r '.Credentials.SecretAccessKey')
+  export AWS_SESSION_TOKEN=$(cat .assumed-role.json | jq -r '.Credentials.SessionToken')
+  rm -f .assumed-role.json
+
+  export AWS_ACCOUNT_ID="${delegate_account_id}"
+  export AWS_ROLE="${delegate_role}"
+fi
 
 
 #####  TF PLAN Scoped #####
@@ -57,38 +61,37 @@ if [[ "${BUILDKITE_COMMAND}" == "tf_plan" ]]; then
 
   # fetch mappings from s3 only when running on agent for access policy reasons
   if [[ -n "${BUILDKITE}" ]]; then
-    fetch_mappings_from_s3()
+    fetch_mappings_from_s3
   else
-
     # assume mapping is in local directory
     echo "___ : Buildkite creator team permissions check..."
+  fi
 
-    if [[ ":$BUILDKITE_BUILD_CREATOR_TEAMS:" != *":everyone:"* ]]; then
+  if [[ ":$BUILDKITE_BUILD_CREATOR_TEAMS:" != *":everyone:"* ]]; then
 
-      PERMISSIONS=($(cat tmp/team_account_mappings.json | jq -r ".[\"${BUILDKITE_PLUGIN_TERRAFORM_ACCOUNT_ID}\"]" | tr "," "\n" ))
+    PERMISSIONS=($(cat tmp/team_account_mappings.json | jq -r ".[\"${BUILDKITE_PLUGIN_TERRAFORM_ACCOUNT_ID}\"]" | tr "," "\n" ))
 
-      echo "BUILDKITE_BUILD_CREATOR_TEAMS = $BUILDKITE_BUILD_CREATOR_TEAMS "
-      echo "ARN '"$BUILDKITE_PLUGIN_TERRAFORM_ACCOUNT_ID"' with permissions "${PERMISSIONS[*]}
+    echo "BUILDKITE_BUILD_CREATOR_TEAMS = $BUILDKITE_BUILD_CREATOR_TEAMS "
+    echo "ARN '"$BUILDKITE_PLUGIN_TERRAFORM_ACCOUNT_ID"' with permissions "${PERMISSIONS[*]}
 
-      PERMISSION_GIVEN="no"
-      for i in ${PERMISSIONS[@]}; do
-        if [[ $i == \"$BUILDKITE_BUILD_CREATOR_TEAMS\" ]]; then
-          echo "Permission scoped for "$i;
-          PERMISSION_GIVEN="yes"
-        fi
-        # echo "$i";
-      done
-
-      if [[ "$PERMISSION_GIVEN" = "yes" ]]; then
-        echo "Permission scoped to user. Yay."
-      else
-        echo "Permission not scoped to user. :( "
-        exit 1
+    PERMISSION_GIVEN="no"
+    for i in ${PERMISSIONS[@]}; do
+      if [[ $i == \"$BUILDKITE_BUILD_CREATOR_TEAMS\" ]]; then
+        echo "Permission scoped for "$i;
+        PERMISSION_GIVEN="yes"
       fi
+      # echo "$i";
+    done
 
+    if [[ "$PERMISSION_GIVEN" = "yes" ]]; then
+      echo "Permission scoped to user. Yay."
     else
-      echo "Permission scoped to everyone. Yay."
+      echo "Permission not scoped to user. :( "
+      exit 1
     fi
+
+  else
+    echo "Permission scoped to everyone. Yay."
   fi
 
 fi
