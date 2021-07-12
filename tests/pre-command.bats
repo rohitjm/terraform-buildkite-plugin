@@ -44,15 +44,3 @@ export BUILDKITE_BUILD_NUMBER="105"
   assert_failure
   assert_output --partial "Permission not scoped to user."
 }
-
-@test "Fails on no TF id" {
-  export BUILDKITE_BUILD_CREATOR_TEAMS="orchestration-delivery"
-  export BUILDKITE_COMMAND="tf_plan"
-  export AGE_IN_SECONDS=10
-  export CACHE_MAX_AGE=100
-
-  run "$PWD/hooks/pre-command"
-
-  assert_failure
-  assert_output --partial "Permission not scoped to user."
-}
