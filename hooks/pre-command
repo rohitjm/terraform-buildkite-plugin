@@ -66,14 +66,14 @@ if [[ "${BUILDKITE_COMMAND}" == "tf_plan" ]]; then
     done
 
     if [[ "$PERMISSION_GIVEN" = true ]]; then
-      echo -e "${GREEN}Permission scoped to user. Yay."
+      echo -e "${GREEN}Permission scoped to user. Yay.${NC}"
     else
-      echo -e "${RED}Permission not scoped to user. :( "
+      echo -e "${RED}Permission not scoped to user. :(${NC}"
       exit 1
     fi
 
   else
-    echo -e "${GREEN}Permission scoped to everyone. Yay."
+    echo -e "${GREEN}Permission scoped to everyone. Yay.${NC}"
   fi
 
 fi
